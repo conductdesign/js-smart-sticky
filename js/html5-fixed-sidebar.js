@@ -19,130 +19,103 @@
 
  */
  
-// Utility method to extend defaults with user options
-function extendDefaults(source, properties) {
-	var property;
-	for (property in properties) {
-		if (properties.hasOwnProperty(property)) {
-			source[property] = properties[property];
-		}
-	}
-	console.log(source);
-	return source;
-}
 
-
-function Sticker (options) {    
-		
-		this.sidebarID	= options.elemID || false;
-		this.breakpoint = options.breakpoint || false; 
-		this.adminbarID = options.adminbarID || false; 
+(function() {
+	
+	this.Sticker = function () {
 		
 		// Define option defaults
     var defaults = {
-      sidebarID 	: false,
-      breakpoint	: false,	
-			adminbarID	: false
+      	sidebarID 	: false,
+      	breakpoint	: false,	
+				adminbarID	: false
     }
-			
-    // Create options by extending defaults with the passed in arugments
+		
+		// Create options by extending defaults with the passed in arugments
     if (arguments[0] && typeof arguments[0] === "object") {
       this.options = extendDefaults(defaults, arguments[0]);
     }
-	
-		this.init();
-}
-
-
-Sticker.prototype = {
-
-	constructor: Sticker,
-	
-	init: function() {
-				 
-		// some document properties for the getBoundingClientRect function below
+		console.log(this.options);
+		// some global properties for the getBoundingClientRect function below
 		this.window = window;
 		this.body = document.body;
 		this.docElem = document.documentElement;
 		this.clientTop = this.docElem.clientTop || this.body.clientTop || 0;
-		
-		
-		// set the sliding element, e.g. your sidebar.
-		this.el = document.getElementById(this.options.sidebarID) || document.getElementsByTagName('aside')[0];
-		if (this.el === null) return;
 
+		this.el = document.getElementById(this.options.sidebarID) || document.getElementsByTagName('aside')[0];
+		if (this.el === null) {return};
+		
 		this.parent = this.el.offsetParent;
 		
-		
-		// check for Wordpress admin bar.
+		// check for adminbar element
 		if (this.options.adminbarID) { 
-
 			this.adminbar = document.getElementById(this.options.adminbarID);
-			
-			// If no admin bar, notify via console
-			if ( this.adminbar ) 
-				console.log('Cannot find element with ID "' + this.options.adminbarID + '". Check spelling. Remember to remove leading hash symbol.');
+
+			if ( this.adminbar === null ) { 
+				console.log('Cannot find element with ID "' + this.options.adminbarID + '". Remember to remove leading hash symbol.');
+			}
 		}
 		
-		// set flags for the scroll handler
+		// set global flag for the scroll handler
 		this.lastWindowPos = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop); // accounts for page reloads
 		this.top = false;
 		this.bottom = false;
 		this.fixed = false;
 		
 		// fire the resize handler to get/set more initial values.
-		this.resizeHandler();
+		resizeHandler.call(this);
 		
 		// only add listeners if the sliding element has room to slide.
-		if (this.trackHeight > this.elHeight) this.bindEvents();
-	},
-	
-	bindEvents: function() {
-		window.addEventListener("scroll", this.scrollHandler.bind(this));
-		window.addEventListener("resize", this.resizeHandler.bind(this));
-	},
-	
-	getRect: function(elem) {
-		var rect, 
-			top, 
-			bottom, 
-			width,
-			height,
-			scrollTop = window.pageYOffset || this.docElem.scrollTop || this.body.scrollTop,
-			scrollLeft = window.pageXOffset || this.docElem.scrollLeft || this.body.scrollLeft;
-				
-		if (elem.getBoundingClientRect) { // Internet Explorer, Firefox 3+, Google Chrome, Opera 9.5+, Safari 4+
-			rect	= elem.getBoundingClientRect();
-			top		= rect.top + scrollTop - this.clientTop;
-			bottom	= rect.bottom + scrollTop - this.clientTop;
-			width	= rect.right - rect.left;
-			height	= rect.bottom - rect.top;
-			
-		} else {
-			console.log("Error: cannot use getBoundingClientRect()");
-		}
+		if (this.trackHeight > this.elHeight) bindEvents();
 		
-		return { top: Math.round(top), bottom: Math.round(bottom), width: Math.round(width), height: Math.round(height) };	
-	},
+	}
 	
-	scrollHandler: function() {
+	// Public Methods
+	
+	
+	// Private Methods
+	
+	function resizeHandler () {
+
+		// get window height and width. Used to determine bottom of screen and responsive breakpoint
+		this.windowHeight = this.window.innerHeight || this.docElem.offsetHeight || this.body.offsetHeight;
+		this.windowWidth  = this.window.innerWidth || this.docElem.offsetWidth || this.body.offsetWidth;            
+		
+		// check the admin bar height with each resize.
+		this.adminbarOffset = (this.adminbar !== undefined) ? this.getRect(this.adminbar).height : 0;
+		
+		// reset element CSS and top/bottom flags
+		this.el.style.cssText = '';
+		this.top = this.bottom = false;
+		
+		// Get element width AFTER resetting css in order to get accurate width
+		this.elWidth = getRect.call(this, this.el).width;
+		//console.log(this.elWidth);
+		
+		// rerun the scroll handler to adjust element after resize
+		scrollHandler.call(this);
 		
 		// If window is narrower than breakpoint, reset css and then abort. 
 		// This is helpful for tablets which, by rotating, toggle mobile and desktop layouts.           	
 		if ( this.options.breakpoint && this.windowWidth < this.options.breakpoint) {
-			this.el.style.cssText = ''; 
-			return;
+			window.removeEventListener("scroll", scrollHandler);
+		} else {
+			window.addEventListener("scroll", scrollHandler.bind(this));
 		}
+	}
+	
+	
+	function scrollHandler () {
 				
 		// check sliding element (e.g. sidebar) position.
-		var elBounds  = this.getRect(this.el);
+		var elBounds  = getRect.call(this, this.el);
 		this.elTop 	  = elBounds.top;
 		this.elBottom = elBounds.bottom;
 		this.elHeight = elBounds.height;
 		
 		// Re-evaluate track variables 
 		// (incase of expanded dropdowns or slow-loading (ajax) DOM elements)
-		var trackBounds	 = this.getRect(this.parent);
+		var trackBounds	 = getRect.call(this, this.parent);
 		this.trackTop 	 = trackBounds.top;
 		this.trackBottom = trackBounds.bottom;
 		this.trackHeight = trackBounds.height;
@@ -242,28 +215,47 @@ Sticker.prototype = {
 		}
 		
 		this.lastWindowPos = windowPos;
+	}
 	
-	},
-	// Event handler for window resize
-	resizeHandler: function() {
+	
+	function bindEvents () {
+		
+		window.addEventListener("resize", resizeHandler.bind(this));
+	}
+	
+	
+	function getRect (elem) {
+		var rect, 
+				top, 
+				bottom, 
+				width,
+				height,
+				scrollTop = window.pageYOffset || this.docElem.scrollTop || this.body.scrollTop,
+				scrollLeft = window.pageXOffset || this.docElem.scrollLeft || this.body.scrollLeft;
 				
-		// get window height and width. Used to determine bottom of screen and responsive breakpoint
-		this.windowHeight = this.window.innerHeight || this.docElem.offsetHeight || this.body.offsetHeight;
-		this.windowWidth  = this.window.innerWidth || this.docElem.offsetWidth || this.body.offsetWidth;            
+		if (elem.getBoundingClientRect) { // Internet Explorer, Firefox 3+, Google Chrome, Opera 9.5+, Safari 4+
+			rect		= elem.getBoundingClientRect();
+			top			= rect.top + scrollTop - this.clientTop;
+			bottom	= rect.bottom + scrollTop - this.clientTop;
+			width		= rect.right - rect.left;
+			height	= rect.bottom - rect.top;
+		} else {
+			console.log("Error: cannot use getBoundingClientRect()");
+		}
 		
-		// check the admin bar height with each resize.
-		this.adminbarOffset = (this.adminbar !== undefined) ? this.getRect(this.adminbar).height : 0;
-		
-		// reset element CSS and top/bottom flags
-		this.el.style.cssText = '';
-		this.top = this.bottom = false;
-		
-		// Get element width AFTER resetting css in order to get accurate width
-		this.elWidth = this.getRect(this.el).width;
-		//console.log(this.elWidth);
-		
-		// rerun the scroll handler to adjust element after resize
-		this.scrollHandler();
-	},
+		return { top: Math.round(top), bottom: Math.round(bottom), width: Math.round(width), height: Math.round(height) };	
+	}
 	
-};
+	
+	function extendDefaults(source, properties) {
+		var property;
+		for (property in properties) {
+			if (properties.hasOwnProperty(property)) {
+				source[property] = properties[property];
+			}
+		}
+		return source;
+	}
+	
+	
+}());	
