@@ -14,7 +14,7 @@
  *
  * Options: 
  * sidebarID  : The ID of the element to be positioned. Must be, obviously, a unique ID. (Default: false – uses first <aside> in DOM) 
- * breakpoint : Set breakpoint (px) for responsive mobile layout. Assuming sidebar wraps under main content on smaller screens. (Default: false)
+ * breakpoint : Set breakpoint (px) for responsive mobile layout. Plugin functionality is disabled for window widths below this value. (Default: false)
  * adminbarID : The ID of an admin- or controlbar element, e.g. 'wpadminbar' for the WordPress crowd. (Default: false)
 
  */
@@ -51,7 +51,7 @@
 		if (this.options.adminbarID) { 
 			this.adminbar = document.getElementById(this.options.adminbarID);
 
-			if ( this.adminbar === null ) { 
+			if ( ! this.adminbar ) { 
 				console.log('Cannot find element with ID "' + this.options.adminbarID + '". Remember to remove leading hash symbol.');
 			}
 		}
@@ -62,11 +62,11 @@
 		this.bottom = false;
 		this.fixed = false;
 		
+		// only add listeners if the sliding element has room to slide.
+		if ( getRect.call(this, this.parent).height > getRect.call(this, this.el).height ) { bindEvents.call(this) };
+		
 		// fire the resize handler to get/set more initial values.
 		resizeHandler.call(this);
-		
-		// only add listeners if the sliding element has room to slide.
-		if (this.trackHeight > this.elHeight) bindEvents();
 		
 	}
 	
@@ -75,6 +75,12 @@
 	
 	// Private Methods
 	
+	function bindEvents () {
+		window.addEventListener("resize", resizeHandler.bind(this));
+		window.addEventListener("scroll", scrollHandler.bind(this));
+	}
+	
+	
 	function resizeHandler () {
 
 		// get window height and width. Used to determine bottom of screen and responsive breakpoint
@@ -82,30 +88,32 @@
 		this.windowWidth  = this.window.innerWidth || this.docElem.offsetWidth || this.body.offsetWidth;            
 		
 		// check the admin bar height with each resize.
-		this.adminbarOffset = (this.adminbar !== undefined) ? this.getRect(this.adminbar).height : 0;
-		
+		this.adminbarOffset = (this.adminbar) ? getRect.call(this, this.adminbar).height : 0;
+		console.log(this.adminbarOffset);
 		// reset element CSS and top/bottom flags
 		this.el.style.cssText = '';
-		this.top = this.bottom = false;
+		this.top = this.bottom = this.fixed = false;
 		
 		// Get element width AFTER resetting css in order to get accurate width
 		this.elWidth = getRect.call(this, this.el).width;
-		//console.log(this.elWidth);
 		
-		// rerun the scroll handler to adjust element after resize
-		scrollHandler.call(this);
-		
-		// If window is narrower than breakpoint, reset css and then abort. 
-		// This is helpful for tablets which, by rotating, toggle mobile and desktop layouts.           	
+		// If window is narrower than breakpoint, remove scrollhandler. 
+		// Assumes sidebar content will be positioned under main content in smaller windows.
 		if ( this.options.breakpoint && this.windowWidth < this.options.breakpoint) {
 			window.removeEventListener("scroll", scrollHandler);
 		} else {
-			window.addEventListener("scroll", scrollHandler.bind(this));
+			
+			// run the scrollhandler once to adjust element after resize
+			scrollHandler.call(this);
 		}
 	}
 	
 	
 	function scrollHandler () {
+		
+		console.log('top:'+this.top);
+		console.log('bottom:'+this.bottom);
+		console.log('fixed:'+this.fixed);
 				
 		// check sliding element (e.g. sidebar) position.
 		var elBounds  = getRect.call(this, this.el);
@@ -171,6 +179,7 @@
 				} else {
 					this.top = true;
 					this.el.style.cssText = '';
+					console.log("test");
 				}
 				
 			}		
@@ -215,12 +224,6 @@
 		}
 		
 		this.lastWindowPos = windowPos;
-	}
-	
-	
-	function bindEvents () {
-		
-		window.addEventListener("resize", resizeHandler.bind(this));
 	}
 	
 	
