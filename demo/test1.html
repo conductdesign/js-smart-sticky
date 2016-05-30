@@ -34,7 +34,7 @@
         </div>
 
         <div class="main-container">
-            <div class="main wrapper clearfix" style="position: relative;">
+            <div class="main wrapper clearfix" >
 
                 <article>
                    
@@ -90,9 +90,12 @@
 					document.addEventListener("DOMContentLoaded", function(event) {
 
 						var stickySidebar = new Sticker({
-							//elemID: 'sidebar-primary',
-							breakpoint: 769,
-							adminbarID: 'foo',
+						//elemID: 'sidebar-primary',
+							parentID: 'foo',
+						//topOffset: 20,
+						//bottomOffset: 20,
+							minWidth: 769,
+						//adminbarID: 'bar',
 							}
 						);
 

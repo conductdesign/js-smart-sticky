@@ -27,7 +27,10 @@
 		// Define option defaults
     var defaults = {
       	sidebarID 	: false,
-      	breakpoint	: false,	
+				parentID		: false,
+      	minWidth		: false,
+			//topOffset		: 0,
+			//bottomOffset: 0,
 				adminbarID	: false
     }
 		
@@ -35,17 +38,19 @@
     if (arguments[0] && typeof arguments[0] === "object") {
       this.options = extendDefaults(defaults, arguments[0]);
     }
-		console.log(this.options);
+
 		// some global properties for the getBoundingClientRect function below
 		this.window = window;
 		this.body = document.body;
 		this.docElem = document.documentElement;
 		this.clientTop = this.docElem.clientTop || this.body.clientTop || 0;
-
+		
+		// Dynamic properties
 		this.el = document.getElementById(this.options.sidebarID) || document.getElementsByTagName('aside')[0];
 		if (this.el === null) {return};
 		
-		this.parent = this.el.offsetParent;
+		//use direct parent element if not user-defined. 
+		this.parent = document.getElementById(this.options.parentID) || this.el.parentElement;
 		
 		// check for adminbar element
 		if (this.options.adminbarID) { 
@@ -56,14 +61,16 @@
 			}
 		}
 		
-		// set global flag for the scroll handler
+		// set global flags for the scroll handler
 		this.lastWindowPos = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop); // accounts for page reloads
 		this.top = false;
 		this.bottom = false;
 		this.fixed = false;
+		this.scrollSet = false; // flag for scroll event listener
 		
 		// only add listeners if the sliding element has room to slide.
-		if ( getRect.call(this, this.parent).height > getRect.call(this, this.el).height ) { bindEvents.call(this) };
+		if ( getBounds.call(this, this.parent).height > getBounds.call(this, this.el).height ) { bindEvents.call(this) };
+		
 		
 		// fire the resize handler to get/set more initial values.
 		resizeHandler.call(this);
@@ -77,109 +84,104 @@
 	
 	function bindEvents () {
 		window.addEventListener("resize", resizeHandler.bind(this));
-		window.addEventListener("scroll", scrollHandler.bind(this));
+		setScrollHandler.call(this);
+	}
+	
+	function setScrollHandler () {
+		
+		if ( this.options.minWidth && this.windowWidth < this.options.minWidth && this.scrollSet ) {
+			// If window is narrower than breakpoint, remove scrollhandler. Assumes classic resposive positioning handling.
+			window.removeEventListener("scroll", scrollHandler);
+			this.scrollSet = false;
+			
+		} else if ( this.options.minWidth && this.windowWidth >= this.options.minWidth && !this.scrollSet ) {
+			window.addEventListener("scroll", scrollHandler.bind(this));
+			this.scrollSet = true;
+		}
+		console.log('scrolling: '+this.scrollSet);
+
 	}
 	
 	
 	function resizeHandler () {
 
-		// get window height and width. Used to determine bottom of screen and responsive breakpoint
+		// get window height and width. Used to determine bottom of screen and responsive breakpoint.
 		this.windowHeight = this.window.innerHeight || this.docElem.offsetHeight || this.body.offsetHeight;
 		this.windowWidth  = this.window.innerWidth || this.docElem.offsetWidth || this.body.offsetWidth;            
 		
 		// check the admin bar height with each resize.
-		this.adminbarOffset = (this.adminbar) ? getRect.call(this, this.adminbar).height : 0;
-		console.log(this.adminbarOffset);
-		// reset element CSS and top/bottom flags
+		this.adminbarOffset = (this.adminbar) ? getBounds.call(this, this.adminbar).height : 0;
+
+		// reset element CSS and attachment flags
 		this.el.style.cssText = '';
 		this.top = this.bottom = this.fixed = false;
 		
-		// Get element width AFTER resetting css in order to get accurate width
-		this.elWidth = getRect.call(this, this.el).width;
+		// Get element width AFTER resetting css and BEFORE recalulating sidebar position to ensure width relative to parent.
+		this.elWidth = getBounds.call(this, this.el).width;
 		
-		// If window is narrower than breakpoint, remove scrollhandler. 
-		// Assumes sidebar content will be positioned under main content in smaller windows.
-		if ( this.options.breakpoint && this.windowWidth < this.options.breakpoint) {
-			window.removeEventListener("scroll", scrollHandler);
-		} else {
-			
-			// run the scrollhandler once to adjust element after resize
-			scrollHandler.call(this);
-		}
+		setScrollHandler.call(this);
+		
+		if ( this.scrollSet ) { scrollHandler.call(this); } // fire scrollHandler after recalculate sidebar position.
+		
 	}
 	
 	
 	function scrollHandler () {
-		
-		console.log('top:'+this.top);
-		console.log('bottom:'+this.bottom);
-		console.log('fixed:'+this.fixed);
 				
-		// check sliding element (e.g. sidebar) position.
-		var elBounds  = getRect.call(this, this.el);
-		this.elTop 	  = elBounds.top;
-		this.elBottom = elBounds.bottom;
-		this.elHeight = elBounds.height;
+		// re-evaluate sidebar and parent position.
+		var elBounds  	 = getBounds.call(this, this.el),
+				trackBounds	 = getBounds.call(this, this.parent),
 		
-		// Re-evaluate track variables 
-		// (incase of expanded dropdowns or slow-loading (ajax) DOM elements)
-		var trackBounds	 = getRect.call(this, this.parent);
-		this.trackTop 	 = trackBounds.top;
-		this.trackBottom = trackBounds.bottom;
-		this.trackHeight = trackBounds.height;
+				windowPos 	 = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop),
+				windowBottom = windowPos + this.windowHeight;
 		
-		
-		// Get window position
-		var windowPos = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop);
-		var windowBottom = windowPos + this.windowHeight;
-		
-		if (this.elHeight > this.windowHeight) {
+		if (elBounds.height > this.windowHeight) {
 			
 			if (windowPos > this.lastWindowPos) { // scrolling down
 				
 				if (this.top ) {
 					this.top = false;
-					topOffset = ( this.elTop > 0 ) ? this.elTop - this.trackTop - this.adminbarOffset : 0;
+					topOffset = ( elBounds.top > 0 ) ? elBounds.top - trackBounds.top - this.adminbarOffset : 0;
 					this.el.style.cssText = 'top:' + topOffset + 'px';
 				
-				} else if ( ! this.bottom && windowBottom > this.elBottom  && this.elHeight < this.trackHeight ) { 
+				} else if ( ! this.bottom && windowBottom > elBounds.bottom && elBounds.height < trackBounds.height ) { 
 					this.bottom = true;
-					this.el.style.cssText = 'position:fixed; bottom:0; width:' + this.elWidth + 'px';
+					this.el.style.cssText = 'position:fixed; bottom:0px; width:' + this.elWidth + 'px';
 				
-				} else if (this.bottom && windowBottom >= this.trackBottom + this.adminbarOffset) {
-					this.el.style.cssText = 'top:' + (this.trackBottom - this.elHeight - this.trackTop) + 'px';
+				} else if (this.bottom && windowBottom >= trackBounds.bottom + this.adminbarOffset) {
+					this.el.style.cssText = 'top:' + (trackBounds.bottom - elBounds.height - trackBounds.top) + 'px';
 				}
 			   
 			} else if (windowPos < this.lastWindowPos) { // scrolling up
 			
 				if ( this.bottom ) {
 					this.bottom = false;
-					topOffset = ( this.elTop > 0 ) ? this.elTop - this.trackTop - this.adminbarOffset : 0;
+					topOffset = ( elBounds.top > 0 ) ? elBounds.top - trackBounds.top - this.adminbarOffset : 0;
 					this.el.style.cssText = 'top:' + topOffset + 'px';
 				
-				} else if ( ! this.top && windowPos + this.adminbarOffset < this.elTop && windowPos > this.trackTop) {
+				} else if ( ! this.top && windowPos + this.adminbarOffset < elBounds.top && windowPos > trackBounds.top) {
 					this.top = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.adminbarOffset + 'px; width:' + this.elWidth + 'px';
 				
-				} else if (this.top && windowPos <= this.trackTop) {
+				} else if (this.top && windowPos <= trackBounds.top) {
 					this.el.style.cssText = '';
 				}
 				
 			} else { // no scroll, but probably a resize
 				this.top = this.bottom = false;
 				
-				if (windowPos + this.elHeight < this.trackBottom && windowPos > this.trackTop) {
+				if (windowPos + elBounds.height < trackBounds.bottom && windowPos > trackBounds.top) {
 					this.top = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.adminbarOffset + 'px; width:' + this.elWidth + 'px';
 				
-				} else if (windowBottom >= this.trackBottom) {
+				} else if (windowBottom >= trackBounds.bottom) {
 					this.bottom = true;
-					this.el.style.cssText = 'top:' + (this.trackBottom - this.elHeight - this.trackTop) + 'px';
+					this.el.style.cssText = 'top:' + (trackBounds.bottom - elBounds.height - trackBounds.top) + 'px';
 				
 				} else {
 					this.top = true;
 					this.el.style.cssText = '';
-					console.log("test");
+					console.log("total reset. Can't position sidebar.");
 				}
 				
 			}		
@@ -188,34 +190,34 @@
 			
 			if (windowPos > this.lastWindowPos) { // scrolling down
 				
-				if (!this.fixed && windowPos + this.adminbarOffset > this.elTop && this.elBottom < this.trackBottom) {
+				if (!this.fixed && windowPos + this.adminbarOffset > elBounds.top && elBounds.bottom < trackBounds.bottom) {
 					this.fixed = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.adminbarOffset + 'px; width:' + this.elWidth + 'px';
 
-				} else if (this.fixed && this.elBottom - this.adminbarOffset >= this.trackBottom) {
+				} else if (this.fixed && elBounds.bottom - this.adminbarOffset >= trackBounds.bottom) {
 					this.fixed = false;
-					this.el.style.cssText = 'top:' + (this.trackBottom - this.elHeight - this.trackTop) + 'px';
+					this.el.style.cssText = 'top:' + (trackBounds.bottom - elBounds.height - trackBounds.top) + 'px';
 				} 	
 				
 			} else if (windowPos < this.lastWindowPos) { // scrolling up
 				
-				if (this.fixed && windowPos <= this.trackTop) {
+				if (this.fixed && windowPos <= trackBounds.top) {
 					this.fixed = false;
 					this.el.style.cssText = '';
 
-				} else if (!this.fixed && windowPos < this.elTop - this.adminbarOffset && windowPos > this.trackTop) {
+				} else if (!this.fixed && windowPos < elBounds.top - this.adminbarOffset && windowPos > trackBounds.top) {
 					this.fixed = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.adminbarOffset + 'px; width:' + this.elWidth + 'px';
 				}
 				
 			} else { // no scroll, but probably a resize
 				this.fixed = false;
-				if (windowPos + this.elHeight + this.adminbarOffset < this.trackBottom && windowPos > this.trackTop) {
+				if (windowPos + elBounds.height + this.adminbarOffset < trackBounds.bottom && windowPos > trackBounds.top) {
 					this.fixed = true;
 					this.el.style.cssText = 'position:fixed; top:0; width:' + this.elWidth + 'px';
 				
-				} else if (windowBottom >=this.trackBottom) {
-					this.el.style.cssText = 'top:' + (this.trackBottom - this.elHeight - this.trackTop) + 'px';
+				} else if (windowBottom >=trackBounds.bottom) {
+					this.el.style.cssText = 'top:' + (trackBounds.bottom - elBounds.height - trackBounds.top) + 'px';
 				
 				} else {
 					this.el.style.cssText = '';
@@ -227,7 +229,7 @@
 	}
 	
 	
-	function getRect (elem) {
+	function getBounds (elem) {
 		var rect, 
 				top, 
 				bottom, 
