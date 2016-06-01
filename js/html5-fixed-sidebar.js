@@ -131,50 +131,52 @@
 		// re-evaluate sidebar and parent position.
 		var elBounds  	 = getBounds.call(this, this.el),
 				trackBounds	 = getBounds.call(this, this.parent),
+				topOffset,
 		
 				windowPos 	 = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop),
 				windowBottom = windowPos + this.windowHeight;
 		
-		if (elBounds.height > this.windowHeight) {
+		if ( elBounds.height > this.windowHeight ) {
 			
-			if (windowPos > this.lastWindowPos) { // scrolling down
+			if ( windowPos > this.lastWindowPos ) { // scrolling down
 				
-				if (this.top ) {
+				if ( this.top ) {
 					this.top = false;
 					topOffset = ( elBounds.top > 0 ) ? elBounds.top - trackBounds.top - this.adminbarOffset : 0;
 					this.el.style.cssText = 'top:' + topOffset + 'px';
 				
-				} else if ( ! this.bottom && windowBottom > elBounds.bottom && elBounds.height < trackBounds.height ) { 
+				} else if ( ! this.bottom && windowBottom > elBounds.bottom && elBounds.bottom < trackBounds.bottom ) { 
 					this.bottom = true;
 					this.el.style.cssText = 'position:fixed; bottom:0px; width:' + this.elWidth + 'px';
 				
-				} else if (this.bottom && windowBottom >= trackBounds.bottom + this.adminbarOffset) {
+				} else if ( this.bottom && windowBottom >= trackBounds.bottom + this.adminbarOffset ) {
+					this.bottom = false;
 					this.el.style.cssText = 'top:' + (trackBounds.bottom - elBounds.height - trackBounds.top) + 'px';
 				}
 			   
-			} else if (windowPos < this.lastWindowPos) { // scrolling up
+			} else if ( windowPos < this.lastWindowPos ) { // scrolling up
 			
 				if ( this.bottom ) {
 					this.bottom = false;
 					topOffset = ( elBounds.top > 0 ) ? elBounds.top - trackBounds.top - this.adminbarOffset : 0;
 					this.el.style.cssText = 'top:' + topOffset + 'px';
 				
-				} else if ( ! this.top && windowPos + this.adminbarOffset < elBounds.top && windowPos > trackBounds.top) {
+				} else if ( ! this.top && windowPos + this.adminbarOffset < elBounds.top && windowPos > trackBounds.top ) {
 					this.top = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.adminbarOffset + 'px; width:' + this.elWidth + 'px';
 				
-				} else if (this.top && windowPos <= trackBounds.top) {
+				} else if ( this.top && windowPos <= trackBounds.top ) {
 					this.el.style.cssText = '';
 				}
 				
 			} else { // no scroll, but probably a resize
 				this.top = this.bottom = false;
 				
-				if (windowPos + elBounds.height < trackBounds.bottom && windowPos > trackBounds.top) {
+				if ( windowPos + elBounds.height < trackBounds.bottom && windowPos > trackBounds.top ) {
 					this.top = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.adminbarOffset + 'px; width:' + this.elWidth + 'px';
 				
-				} else if (windowBottom >= trackBounds.bottom) {
+				} else if ( windowBottom >= trackBounds.bottom ) {
 					this.bottom = true;
 					this.el.style.cssText = 'top:' + (trackBounds.bottom - elBounds.height - trackBounds.top) + 'px';
 				
