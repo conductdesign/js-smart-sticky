@@ -1,20 +1,21 @@
 /**
  * A Vanilla JS HTML5 Fixed Sidebar 
- * Version: 1.0
+ * Version: 0.2
  * 
- * Author: Chris Freeman <
+ * Author: Chris Freeman
  * Author URL: http://www.conductdesign.com
  *
  * Description:
  * A pure JS plugin to offset a sidebar element using fixed and relative positioning with top/bottom offsets, i.e. keeps the sidebar in view. 
  * The code is an adaptation of a similar module included in WordPress's 'Twenty Fifteen' theme by Takashi Irie and a host of contributors.
  *
- * License:
- * License URL: 
+ * License: GNU GPL 3.0
+ * License URL: http://www.gnu.org/licenses/gpl-3.0.html
  *
  * Options: 
  * sidebarID  : The ID of the element to be positioned. Must be, obviously, a unique ID. (Default: false – uses first <aside> in DOM) 
- * breakpoint : Set breakpoint (px) for responsive mobile layout. Plugin functionality is disabled for window widths below this value. (Default: false)
+ * parentID   : If, for whatever reason, the parent is not the immediate container. (Default: false – uses parentElement of the sidebar) 
+ * minWidth		: Set breakpoint (px) for responsive mobile layout. Plugin functionality is disabled for window widths below this value. (Default: false)
  * adminbarID : The ID of an admin- or controlbar element, e.g. 'wpadminbar' for the WordPress crowd. (Default: false)
 
  */
@@ -57,7 +58,7 @@
 			this.adminbar = document.getElementById(this.options.adminbarID);
 
 			if ( ! this.adminbar ) { 
-				console.log('Cannot find element with ID "' + this.options.adminbarID + '". Remember to remove leading hash symbol.');
+				//console.log('Cannot find element with ID "' + this.options.adminbarID + '". Remember to remove leading hash symbol.');
 			}
 		}
 		
@@ -98,8 +99,6 @@
 			window.addEventListener("scroll", scrollHandler.bind(this));
 			this.scrollSet = true;
 		}
-		console.log('scrolling: '+this.scrollSet);
-
 	}
 	
 	
@@ -183,7 +182,6 @@
 				} else {
 					this.top = true;
 					this.el.style.cssText = '';
-					console.log("total reset. Can't position sidebar.");
 				}
 				
 			}		
@@ -247,7 +245,7 @@
 			width		= rect.right - rect.left;
 			height	= rect.bottom - rect.top;
 		} else {
-			console.log("Error: cannot use getBoundingClientRect()");
+			//console.log("Error: cannot use getBoundingClientRect()");
 		}
 		
 		return { top: Math.round(top), bottom: Math.round(bottom), width: Math.round(width), height: Math.round(height) };	
