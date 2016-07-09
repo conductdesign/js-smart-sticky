@@ -33,7 +33,7 @@
 			//topOffset		: 0,
 			//bottomOffset: 0,
 				adminbarID	: false
-    }
+    };
 		
 		// Create options by extending defaults with the passed in arugments
     if (arguments[0] && typeof arguments[0] === "object") {
@@ -48,7 +48,7 @@
 		
 		// Dynamic properties
 		this.el = document.getElementById(this.options.sidebarID) || document.getElementsByTagName('aside')[0];
-		if (this.el === null) {return};
+		if (this.el === null) {return;}
 		
 		//use direct parent element if not user-defined. 
 		this.parent = document.getElementById(this.options.parentID) || this.el.parentElement;
@@ -70,13 +70,13 @@
 		this.scrollSet = false; // flag for scroll event listener
 		
 		// only add listeners if the sliding element has room to slide.
-		if ( getBounds.call(this, this.parent).height > getBounds.call(this, this.el).height ) { bindEvents.call(this) };
+		if ( getBounds.call(this, this.parent).height > getBounds.call(this, this.el).height ) { bindEvents.call(this); }
 		
 		
 		// fire the resize handler to get/set more initial values.
 		resizeHandler.call(this);
 		
-	}
+	};
 	
 	// Public Methods
 	
