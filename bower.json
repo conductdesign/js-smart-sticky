@@ -1,0 +1,23 @@
+{
+  "name": "js-smart-sticky",
+  "homepage": "https://github.com/conductdesign/js-smart-sticky",
+  "authors": [
+    "conductdesign <git@conductdesign.com>"
+  ],
+  "description": "Vanilla JS sticky sidebar with top and bottom attachment.",
+  "main": "js/html5-fixed-sidebar.js",
+  "keywords": [
+    "Javascript",
+    "Sidebar",
+    "fixed",
+    "sticky"
+  ],
+  "license": "GNU GPL-3",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ]
+}
