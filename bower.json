@@ -4,7 +4,7 @@
   "authors": [
     "conductdesign <git@conductdesign.com>"
   ],
-  "description": "Vanilla JS sticky sidebar with top and bottom attachment.",
+  "description": "A pure JS sticky sidebar with top and bottom attachment.",
   "main": "js/html5-fixed-sidebar.js",
   "keywords": [
     "Javascript",
@@ -12,7 +12,7 @@
     "fixed",
     "sticky"
   ],
-  "license": "GNU GPL-3",
+  "license": "GNU GPL 3.0",
   "ignore": [
     "**/.*",
     "node_modules",

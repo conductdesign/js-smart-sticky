@@ -79,7 +79,7 @@
 	};
 	
 	// Public Methods
-	
+	// none.
 	
 	// Private Methods
 	
@@ -116,7 +116,8 @@
 		this.top = this.bottom = this.fixed = false;
 		
 		// Get element width AFTER resetting css and BEFORE recalulating sidebar position to ensure width relative to parent.
-		this.elWidth = getBounds.call(this, this.el).width;
+		this.elWidth 		 = getBounds.call(this, this.el).width;
+		this.elTopOffset = getBounds.call(this, this.el).top;
 		
 		setScrollHandler.call(this);
 		
