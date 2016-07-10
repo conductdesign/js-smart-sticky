@@ -81,15 +81,31 @@
 	
 	function setScrollHandler () {
 		
-		if ( this.options.minWidth && this.windowWidth < this.options.minWidth && this.scrollSet ) {
-			// If window is narrower than breakpoint, remove scrollhandler. Assumes classic resposive positioning handling.
-			window.removeEventListener("scroll", scrollHandler);
-			this.scrollSet = false;
+		if ( this.options.minWidth && !isNaN(this.options.minWidth) && this.options.minWidth > 0 ) {
 			
-		} else if ( this.options.minWidth && this.windowWidth >= this.options.minWidth && !this.scrollSet ) {
-			window.addEventListener("scroll", scrollHandler.bind(this));
-			this.scrollSet = true;
+			if ( this.windowWidth < this.options.minWidth && this.scrollSet ) {
+				// If window is narrower than breakpoint, remove scrollhandler. Assumes classic resposive positioning handling.
+				console.log('remove');
+				window.removeEventListener('scroll', scrollHandlerRef);
+				this.scrollSet = false;
+			
+			} else if ( this.windowWidth >= this.options.minWidth && !this.scrollSet ) {
+				console.log('add 1');
+				scrollHandlerRef = scrollHandler.bind(this);
+				window.addEventListener('scroll', scrollHandlerRef);
+				this.scrollSet = true;
+			}
+			
+		} else {
+			// addlistener
+			if ( !this.scrollSet ) {
+				console.log('add 2');
+				scrollHandlerRef = scrollHandler.bind(this);
+				window.addEventListener('scroll', scrollHandlerRef);
+				this.scrollSet = true;
+			}
 		}
+		console.log(this.scrollSet);
 	}
 	
 	
@@ -118,7 +134,6 @@
 		this.elTopOffset = getBounds.call(this, this.el).top;
 		
 		setScrollHandler.call(this);
-		
 		if ( this.scrollSet ) { scrollHandler.call(this); } // fire scrollHandler after recalculate sidebar position.
 		
 	}
@@ -134,7 +149,7 @@
 				windowPos 	 = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop),
 				windowBottom = windowPos + this.windowHeight;
 		
-		if ( elBounds.height > this.windowHeight ) {
+		if ( elBounds.height > (this.windowHeight - this.topOffset) ) {
 			
 			if ( windowPos > this.lastWindowPos ) { // scrolling down
 				
