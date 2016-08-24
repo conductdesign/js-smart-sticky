@@ -1,6 +1,6 @@
 /**
  * JS HTML5 Fixed Sidebar 
- * Version: 0.3
+ * Version: 0.4
  * 
  * Author: Chris Freeman
  * Author URL: http://www.conductdesign.com
@@ -12,12 +12,11 @@
  * License: GNU GPL 3.0
  * License URL: http://www.gnu.org/licenses/gpl-3.0.html
  *
- * Options: 
- * sidebarID  : String. The ID of the element to be positioned. Must be, obviously, a unique ID. (Default: false – uses first <aside> in DOM) 
- * parentID   : String. If, for whatever reason, the parent is not the sidebar's immediate container. (Default: false – uses parentElement of the sidebar) 
- * minWidth		: Number. Set breakpoint (px) for responsive mobile layout. Plugin functionality is disabled for window widths below this value. (Default: false)
- * topOffsetIDs : Array. The ID or IDs of any FIXED (position:fixed) elements, such as a masthead or admin- or controlbar element, e.g. array('wpadminbar', 'masthead'). (Default: empty array())
- * bottomOffsetIDs : Array. The ID or IDs of any FIXED (position:fixed) footer elements, such as a site footer or cookies warning, e.g. array('colophon'). (Default: empty array())
+ * @param 	sidebarID			String. The ID of the element to be positioned. (Default: false – uses first <aside> in DOM)
+ * @param 	parentID			String. Manually set sidebar's parent. (Default: false – uses parentElement of the sidebar) 
+ * @param		minWidth			Number. Breakpoint (px). Plugin is disabled for window widths below this value. (Default: false)
+ * @param		topOffsetIDs		Array.	The ID or IDs of any FIXED (position:fixed) header elements, e.g. array('wpadminbar', 'masthead'). (Default: empty array)
+ * @param		bottomOffsetIDs	Array.	The ID or IDs of any FIXED (position:fixed) footer elements, e.g. array('colophon'). (Default: empty array)
  */
  
 
@@ -34,7 +33,7 @@
 				bottomOffsetIDs: [],
 				//adminbarID	: false
     };
-		
+				
 		// Create options by extending defaults with the passed in arugments
     if (arguments[0] && typeof arguments[0] === "object") {
       this.options = extendDefaults(defaults, arguments[0]);
@@ -60,52 +59,50 @@
 		this.fixed = false;
 		this.scrollSet = false; // flag for scroll event listener
 		
-		// only add listeners if the sliding element has room to slide.
-		if ( getBounds.call(this, this.parent).height > getBounds.call(this, this.el).height ) { bindEvents.call(this); }
-		
+		// add resize handler
+		console.log('add resize handler');
+		window.addEventListener("resize", resizeHandler.bind(this));
 		
 		// fire the resize handler to get/set more initial values.
 		resizeHandler.call(this);
-		
 	};
+	
 	
 	// Public Methods
 	// none.
+
 	
 	// Private Methods
 	
-	function bindEvents () {
-		window.addEventListener("resize", resizeHandler.bind(this));
-		setScrollHandler.call(this);
-	}
-	
 	function setScrollHandler () {
 		
-		if ( this.options.minWidth && !isNaN(this.options.minWidth) && this.options.minWidth > 0 ) {
+		if ( 
+			(this.options.minWidth && !isNaN(this.options.minWidth) && this.options.minWidth > 0 ) && 
+			(getBounds.call(this, this.parent).height > getBounds.call(this, this.el).height) ) {
 			
 			if ( this.windowWidth < this.options.minWidth && this.scrollSet ) {
 				// If window is narrower than breakpoint, remove scrollhandler. Assumes classic resposive positioning handling.
-				console.log('remove');
+				console.log('remove scroll handler');
 				window.removeEventListener('scroll', scrollHandlerRef);
 				this.scrollSet = false;
 			
 			} else if ( this.windowWidth >= this.options.minWidth && !this.scrollSet ) {
-				console.log('add 1');
+				console.log('add scroll handler');
 				scrollHandlerRef = scrollHandler.bind(this);
 				window.addEventListener('scroll', scrollHandlerRef);
 				this.scrollSet = true;
 			}
 			
 		} else {
-			// addlistener
+			// there is no minWidth; addlistener
 			if ( !this.scrollSet ) {
-				console.log('add 2');
+				console.log('add scroll handler (no minWidth)');
 				scrollHandlerRef = scrollHandler.bind(this);
 				window.addEventListener('scroll', scrollHandlerRef);
 				this.scrollSet = true;
 			}
 		}
-		console.log(this.scrollSet);
+		// console.log(this.scrollSet);
 	}
 	
 	
@@ -113,7 +110,8 @@
 
 		// get window height and width. Used to determine bottom of screen and responsive breakpoint.
 		this.windowHeight = this.window.innerHeight || this.docElem.offsetHeight || this.body.offsetHeight;
-		this.windowWidth  = this.window.innerWidth || this.docElem.offsetWidth || this.body.offsetWidth;            
+		this.windowWidth  = this.window.innerWidth || this.docElem.offsetWidth || this.body.offsetWidth;   
+		
 		
 		// check the admin bar height with each resize.
 		this.topOffset = 0;
@@ -123,7 +121,7 @@
 				this.topOffset += getBounds.call(this, document.getElementById(this.options.topOffsetIDs[i])).height;  
 			}
 		}
-		console.log(this.topOffset);
+		// console.log(this.topOffset);
 
 		// reset element CSS and attachment flags
 		this.el.style.cssText = '';
@@ -134,7 +132,7 @@
 		this.elTopOffset = getBounds.call(this, this.el).top;
 		
 		setScrollHandler.call(this);
-		if ( this.scrollSet ) { scrollHandler.call(this); } // fire scrollHandler after recalculate sidebar position.
+		if ( this.scrollSet ) { scrollHandler.call(this); } // fire scrollHandler after recalculating sidebar position.
 		
 	}
 	
@@ -155,7 +153,6 @@
 				
 				if ( this.top ) {
 					this.top = false;
-					console.log(elBounds.top);
 					topOffset = ( elBounds.top > this.topOffset ) ? elBounds.top - trackBounds.top : 0;
 					this.el.style.cssText = 'top:' + topOffset + 'px; content:"down1";';
 				
@@ -278,4 +275,4 @@
 		return source;
 	}
 	
-}());	
+}());
