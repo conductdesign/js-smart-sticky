@@ -2,13 +2,13 @@
 A pure JS plug-in to offset a sidebar element using fixed and relative positioning with top/bottom offsets, i.e. keeps the sidebar in view. Not using `position:sticky` yet. 
 
 ## Options
-`sidebarID` : The ID of the element to be positioned. Must be, obviously, a unique ID. (Default: false – uses first `<aside>` in DOM)
+`sidebarID` : String. The ID of the element to be positioned. Must be, obviously, a unique ID. (Default: false – uses first `<aside>` in DOM)
 
-`parentID` : If, for whatever reason, the parent is not the immediate container. (Default: false – uses `parentElement` of the sidebar)
+`parentID` : String. If, for whatever reason, the parent is not the immediate container. (Default: false – uses `parentElement` of the sidebar)
 
-`minWidth` : Set the minimum active width (px) for responsive layouts. Plugin functionality is **disabled** for window widths **below** this value. (Default: false)
+`minWidth` : Number. Set the minimum active width (px) for responsive layouts. Plugin functionality is **disabled** for window widths **below** this value. (Default: false)
 
-`adminbarID` : The ID of an admin- or controlbar element, e.g. 'wpadminbar' for the WordPress crowd. (Default: false)
+`topOffsetIDs` : Array. The ID or IDs of any FIXED (position:fixed) elements, such as a masthead or admin- or controlbar element, e.g. array('wpadminbar', 'masthead'). (Default: empty array())
 
 ## Usage
 Include the js file as you see fit, then add this to your html (just before the closing `<body>` tag, or include in an init script file.
@@ -17,7 +17,7 @@ Include the js file as you see fit, then add this to your html (just before the 
 var stickySidebar = new Sticker({
   sidebarID: 'my-sidebar',
   minWidth: 769,
-  adminbarID: 'wpadminbar'
+  topOffsetIDs: 'wpadminbar'
   }
 );
 ```
@@ -34,12 +34,12 @@ This plugin assumes the following HTML structure:
   </aside>
 </div>
 ```
-What's important here is that the wrapper grows with the main content and the sidebar will move up and down within the 'wrapper' div. Other structures may work, but have not yet been tested.
+What's important in this example is that the wrapper grows with the main content. The sidebar will move up and down within the 'wrapper' div. Other structures may work, but have not yet been tested.
 
 ## To-Do
-- Test with fixed headers
+- ~~Test with fixed headers~~ 
 - Test multiple instances
-- Add top and bottom offset options
+- Add ~~top and~~ bottom offset options
 
 
 ## Credit/Attribution
