@@ -157,8 +157,29 @@ nav a:hover {
 /* ==========================================================================
    Author's custom styles
    ========================================================================== */
-
-
+html,body {
+	min-height:100%;
+}
+body {
+	position:relative;
+}
+.fixed-top {
+	position:fixed;
+	top: 0;
+	right: 0;
+	left: 0px;
+	z-index: 100;
+}
+.fixed-pad{
+	padding-top: 96px;
+	padding-bottom: 123px;
+}
+.footer-container {
+	position:absolute;
+	bottom: 0;
+	left:0;
+	right:0;
+}
 
 
 
