@@ -53,7 +53,6 @@
 		
 		//use direct parent element if not user-defined. 
 		this.parent = document.getElementById(this.options.parentID) || this.el.parentElement;
-		console.log(this.parent);
 		
 		// set global flags for the scroll handler
 		this.lastWindowPos = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop); // accounts for page reloads
@@ -143,6 +142,7 @@
 		// Get element width AFTER resetting css and BEFORE recalculating sidebar position to ensure width relative to parent.
 		this.elWidth 		 = getBounds.call(this, this.el).width;
 		this.elTopOffset = getBounds.call(this, this.el).top;
+		this.parentOffset= getBounds.call(this, this.parent).innerTop;
 		
 		setScrollHandler.call(this);
 		if ( this.scrollSet ) { scrollHandler.call(this); } // fire scrollHandler after recalculating sidebar position.
@@ -160,20 +160,24 @@
 				windowPos 	 = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop),
 				windowBottom = windowPos + this.windowHeight;
 		
+		console.log('windowpos: ' + windowPos);
+		console.log('track innerTop: ' + trackBounds.innerTop);
+		console.log(' ');
+		
 		if ( elBounds.height > (this.windowHeight - this.topOffset) ) {
 			
 			if ( windowPos > this.lastWindowPos ) { // scrolling down
 				
 				if ( this.top ) {
 					this.top = false;
-					topOffset = ( elBounds.top > this.topOffset ) ? elBounds.top - trackBounds.top : 0;
+					topOffset = ( this.topOffset > 0 ) ? (elBounds.top - this.topOffset) : 0;
 					this.el.style.cssText = 'top:' + topOffset + 'px; content:"down1";';
 				
-				} else if ( ! this.bottom && windowBottom > elBounds.bottom && elBounds.bottom < trackBounds.bottom - this.bottomOffset ) { 
+				} else if ( ! this.bottom && windowBottom > elBounds.bottom && elBounds.bottom < trackBounds.innerBottom ) { 
 					this.bottom = true;
 					this.el.style.cssText = 'position:fixed; bottom:0px; width:' + this.elWidth + 'px';
 				
-				} else if ( this.bottom && windowBottom >= trackBounds.bottom - this.bottomOffset ) {
+				} else if ( this.bottom && windowBottom >= trackBounds.innerBottom ) {
 					this.bottom = false;
 					this.el.style.cssText = 'top:' + (trackBounds.height - elBounds.height) + 'px; content:"flag:3"';
 				}
@@ -182,27 +186,27 @@
 			
 				if ( this.bottom ) {
 					this.bottom = false;
-					topOffset = ( elBounds.top > trackBounds.top ) ? elBounds.top - trackBounds.top : 0;
+					topOffset = ( elBounds.top > trackBounds.innerTop ) ? elBounds.top - trackBounds.innerTop : 0;
 					this.el.style.cssText = 'top:' + topOffset + 'px; content:"up1";';
 				
-				} else if ( ! this.top && windowPos + this.topOffset < elBounds.top && windowPos + this.topOffset > trackBounds.top ) {
+				} else if ( ! this.top && windowPos + this.topOffset < elBounds.top && windowPos + this.topOffset > trackBounds.innerTop ) {
 					this.top = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
 				
-				} else if ( this.top && windowPos + this.topOffset <= trackBounds.top ) {
+				} else if ( this.top && windowPos <= (trackBounds.innerTop - this.topOffset)) {
 					this.el.style.cssText = '';
 				}
 				
 			} else { // no scroll, but probably a resize
 				this.top = this.bottom = false;
 				
-				if ( windowPos + elBounds.height < (trackBounds.bottom - this.bottomOffset) && windowPos > trackBounds.top ) {
+				if ( windowPos + elBounds.height < (trackBounds.innerBottom) && windowPos > trackBounds.innerTop ) {
 					this.top = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
 				
-				} else if ( windowBottom >= (trackBounds.bottom - this.bottomOffset) ) {
+				} else if ( windowBottom >= trackBounds.innerBottom ) {
 					this.bottom = true;
-					this.el.style.cssText = 'top:' + (trackBounds.bottom - this.bottomOffset - elBounds.height - trackBounds.top) + 'px';
+					this.el.style.cssText = 'top:' + (trackBounds.innerBottom - elBounds.height - trackBounds.innerTop) + 'px';
 				
 				} else {
 					this.top = true;
@@ -215,34 +219,34 @@
 			
 			if (windowPos > this.lastWindowPos) { // scrolling down
 				
-				if (!this.fixed && windowPos + this.topOffset > elBounds.top && elBounds.bottom < trackBounds.bottom) {
+				if (!this.fixed && windowPos + this.topOffset > elBounds.top && elBounds.bottom < trackBounds.innerBottom) {
 					this.fixed = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
 
-				} else if (this.fixed && elBounds.bottom - this.topOffset >= trackBounds.bottom) {
+				} else if (this.fixed && elBounds.bottom - this.topOffset >= trackBounds.innerBottom) {
 					this.fixed = false;
-					this.el.style.cssText = 'top:' + (trackBounds.bottom - elBounds.height - trackBounds.top) + 'px';
+					this.el.style.cssText = 'top:' + (trackBounds.innerBottom - elBounds.height - trackBounds.innerTop) + 'px';
 				} 	
 				
 			} else if (windowPos < this.lastWindowPos) { // scrolling up
 				
-				if (this.fixed && (windowPos + this.topOffset) <= trackBounds.top) {
+				if (this.fixed && (windowPos + this.topOffset) <= trackBounds.innerTop) {
 					this.fixed = false;
 					this.el.style.cssText = '';
 
-				} else if (!this.fixed && windowPos < elBounds.top - this.topOffset && windowPos > trackBounds.top) {
+				} else if (!this.fixed && windowPos < elBounds.top - this.topOffset && windowPos > trackBounds.innerTop) {
 					this.fixed = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
 				}
 				
 			} else { // no scroll, but probably a resize
 				this.fixed = false;
-				if (windowPos + elBounds.height + this.topOffset < trackBounds.bottom && windowPos > trackBounds.top) {
+				if (windowPos + elBounds.height + this.topOffset < trackBounds.innerBottom && windowPos > trackBounds.innerTop) {
 					this.fixed = true;
 					this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
 				
-				} else if (windowBottom >= trackBounds.bottom) {
-					this.el.style.cssText = 'top:' + (trackBounds.bottom - elBounds.height - trackBounds.top) + 'px';
+				} else if (windowBottom >= trackBounds.innerBottom) {
+					this.el.style.cssText = 'top:' + (trackBounds.innerBottom - elBounds.height - trackBounds.innerTop) + 'px';
 				
 				} else {
 					this.el.style.cssText = '';
@@ -265,8 +269,7 @@
 				innerBottom,
 				scrollTop = window.pageYOffset || this.docElem.scrollTop || this.body.scrollTop,
 				scrollLeft = window.pageXOffset || this.docElem.scrollLeft || this.body.scrollLeft,
-				cs = getComputedStyle(elem) || false;
-		
+				cs = window.getComputedStyle(elem, null) || false;
 		if (elem.getBoundingClientRect) { // Internet Explorer, Firefox 3+, Google Chrome, Opera 9.5+, Safari 4+
 			rect		= elem.getBoundingClientRect();
 			top			= rect.top + scrollTop - this.clientTop;
@@ -274,11 +277,12 @@
 			width		= rect.right - rect.left;
 			height	= rect.bottom - rect.top;
 			if (cs) {
-				innerTop		= rect.top + parseFloat(cs.paddingTop) + parseFloat(cs.borderTopWidth);
-				innerBottom = rect.bottom - parseFloat(cs.paddingBottom) - parseFloat(cs.borderBottomWidth);
+				innerTop		= top + parseFloat(cs.paddingTop) + parseFloat(cs.borderTopWidth);
+				innerBottom = bottom - parseFloat(cs.paddingBottom) - parseFloat(cs.borderBottomWidth);
+
 			} else {
-				innerTop		= rect.top;
-				innerBottom = rect.bottom;
+				innerTop		= 0;
+				innerBottom = bottom;
 				console.log("Error: cannot use getComputedStyle!");
 			}
 			
@@ -287,12 +291,15 @@
 		}
 		
 		return { 
-			top: Math.round(top), 
-			bottom: Math.round(bottom), 
+			top: Math.round(top), //relative to window pos
+			//absTop: Math.round(rect.top), // relative to doc
+			bottom: Math.round(bottom), //relative to window pos
+			//absBottom: Math.round(rect.bottom), // relative to doc
+			innerTop: Math.round(innerTop), // element top including padding
+			innerBottom: Math.round(innerBottom), // element bottom including padding
 			width: Math.round(width), 
 			height: Math.round(height), 
-			innerTop: Math.round(innerTop),
-			innerBottom: Math.round(innerBottom),
+			
 		};	
 	}
 
