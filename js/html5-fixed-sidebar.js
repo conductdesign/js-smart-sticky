@@ -160,9 +160,9 @@
 				windowPos 	 = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop),
 				windowBottom = windowPos + this.windowHeight;
 		
-		console.log('windowpos: ' + windowPos);
-		console.log('track innerTop: ' + trackBounds.innerTop);
-		console.log(' ');
+		console.log('top: ' + this.top);
+		console.log('bottom: ' + this.bottom);
+		console.log('fixed: ' + this.fixed);
 		
 		if ( elBounds.height > (this.windowHeight - this.topOffset) ) {
 			
@@ -170,10 +170,10 @@
 				
 				if ( this.top ) {
 					this.top = false;
-					topOffset = ( this.topOffset > 0 ) ? (elBounds.top - this.topOffset) : 0;
+					topOffset = ( this.topOffset > 0 ) ? (elBounds.top - this.topOffset) : elBounds.top - trackBounds.innerTop;
 					this.el.style.cssText = 'top:' + topOffset + 'px; content:"down1";';
 				
-				} else if ( ! this.bottom && windowBottom > elBounds.bottom && elBounds.bottom < trackBounds.innerBottom ) { 
+				} else if ( ! this.bottom && windowBottom > elBounds.bottom && windowBottom < trackBounds.innerBottom ) { 
 					this.bottom = true;
 					this.el.style.cssText = 'position:fixed; bottom:0px; width:' + this.elWidth + 'px';
 				
