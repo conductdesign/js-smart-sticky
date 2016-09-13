@@ -119,21 +119,29 @@
 		this.topOffset = 0;
 		// check topOffsetIDs option
 		if (this.options.topOffsetIDs.length > 0) { 
-			for (var i = 0; i < this.options.topOffsetIDs.length; i++) {
-				this.topOffset += getBounds.call(this, document.getElementById(this.options.topOffsetIDs[i])).height;  
+			for (i = 0; i < this.options.topOffsetIDs.length; i++) {
+				elem = document.getElementById(this.options.topOffsetIDs[i]); 
+				// be sure the element exists
+				if (null !== elem) {
+					this.topOffset += getBounds.call(this, elem).height;  
+				}
 			}
 		}
-		console.log(this.topOffset);
+		//console.log(this.topOffset);
 		
 		
 		this.bottomOffset = 0;
 		// get combined height of any absolute positioned footer elements.
 		if (this.options.bottomOffsetIDs.length > 0) { 
-			for (var i = 0; i < this.options.bottomOffsetIDs.length; i++) {
-				this.bottomOffset += getBounds.call(this, document.getElementById(this.options.bottomOffsetIDs[i])).height;  
+			for (i = 0; i < this.options.bottomOffsetIDs.length; i++) {
+				elem = document.getElementById(this.options.bottomOffsetIDs[i]); 
+				// be sure the element exists
+				if (null !== elem) {
+					this.bottomOffset += getBounds.call(this, elem).height;  
+				}
 			}
 		}
-		console.log(this.bottomOffset);
+		//console.log(this.bottomOffset);
 
 		// reset element CSS and attachment flags
 		this.el.style.cssText = '';
@@ -160,9 +168,6 @@
 				windowPos 	 = pageYOffset || (this.docElem.clientHeight ? this.docElem.scrollTop : this.body.scrollTop),
 				windowBottom = windowPos + this.windowHeight;
 		
-		console.log('top: ' + this.top);
-		console.log('bottom: ' + this.bottom);
-		console.log('fixed: ' + this.fixed);
 		
 		if ( elBounds.height > (this.windowHeight - this.topOffset) ) {
 			
@@ -179,7 +184,7 @@
 				
 				} else if ( this.bottom && windowBottom >= trackBounds.innerBottom ) {
 					this.bottom = false;
-					this.el.style.cssText = 'top:' + (trackBounds.height - elBounds.height) + 'px; content:"flag:3"';
+					this.el.style.cssText = 'top:' + (trackBounds.innerBottom - trackBounds.innerTop - elBounds.height) + 'px; content:"flag:3"';
 				}
 			   
 			} else if ( windowPos < this.lastWindowPos ) { // scrolling up
