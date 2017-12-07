@@ -60,6 +60,7 @@
 		this.bottom = false;
 		this.fixed = false;
 		this.scrollSet = false; // flag for scroll event listener
+    this.resized = false;   // flag for resize; used to avoid false positives in the scroll handler when touchpads register a horizontal scroll event. 
 		
 		// add resize handler
 		console.log('add resize handler');
@@ -151,9 +152,15 @@
 		this.elWidth 		 = getBounds.call(this, this.el).width;
 		this.elTopOffset = getBounds.call(this, this.el).top;
 		this.parentOffset= getBounds.call(this, this.parent).innerTop;
+    
 		
 		setScrollHandler.call(this);
-		if ( this.scrollSet ) { scrollHandler.call(this); } // fire scrollHandler after recalculating sidebar position.
+		if ( this.scrollSet ) {
+      // setting resized flag here keeps it relevant.
+      this.resized = true; 
+      // fire scrollHandler after recalculating sidebar position.
+      scrollHandler.call(this); 
+    } 
 		
 	}
 	
@@ -176,23 +183,24 @@
 				if ( this.top ) {
 					this.top = false;
 					topOffset = ( this.topOffset > 0 ) ? (elBounds.top - this.topOffset) : elBounds.top - trackBounds.innerTop;
-					this.el.style.cssText = 'top:' + topOffset + 'px; content:"down1";';
+					this.el.style.cssText = 'transform: translateY(' + topOffset + 'px); content:"down1";';
 				
 				} else if ( ! this.bottom && windowBottom > elBounds.bottom && windowBottom < trackBounds.innerBottom ) { 
 					this.bottom = true;
-					this.el.style.cssText = 'position:fixed; bottom:0px; width:' + this.elWidth + 'px';
+					this.el.style.cssText = 'position:fixed; bottom:0; width:' + this.elWidth + 'px; content:"down2-bottom";'
 				
 				} else if ( this.bottom && windowBottom >= trackBounds.innerBottom ) {
 					this.bottom = false;
-					this.el.style.cssText = 'top:' + (trackBounds.innerBottom - trackBounds.innerTop - elBounds.height) + 'px; content:"flag:3"';
+					this.el.style.cssText = 'transform: translateY(' + (trackBounds.innerBottom - trackBounds.innerTop - elBounds.height) + 'px); content:"down3"';
 				}
 			   
-			} else if ( windowPos < this.lastWindowPos ) { // scrolling up
+			} else if ( windowPos < this.lastWindowPos ) { 
+        // scrolling up
 			
 				if ( this.bottom ) {
 					this.bottom = false;
 					topOffset = ( elBounds.top > trackBounds.innerTop ) ? elBounds.top - trackBounds.innerTop : 0;
-					this.el.style.cssText = 'top:' + topOffset + 'px; content:"up1";';
+					this.el.style.cssText = 'transform: translateY(' + topOffset + 'px); content:"up1";';
 				
 				} else if ( ! this.top && windowPos + this.topOffset < elBounds.top && windowPos + this.topOffset > trackBounds.innerTop ) {
 					this.top = true;
@@ -202,22 +210,23 @@
 					this.el.style.cssText = '';
 				}
 				
-			} else { // no scroll, but probably a resize
-				this.top = this.bottom = false;
-				
-				if ( windowPos + elBounds.height < (trackBounds.innerBottom) && windowPos > trackBounds.innerTop ) {
-					this.top = true;
-					this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
-				
-				} else if ( windowBottom >= trackBounds.innerBottom ) {
-					this.bottom = true;
-					this.el.style.cssText = 'top:' + (trackBounds.innerBottom - elBounds.height - trackBounds.innerTop) + 'px';
-				
-				} else {
-					this.top = true;
-					this.el.style.cssText = '';
+			} else { // no vertical scroll, but probably a resize
+        if (this.resized) {
+          this.top = this.bottom = false;
+
+          if ( windowPos + elBounds.height < (trackBounds.innerBottom) && windowPos > trackBounds.innerTop ) {
+            this.top = true;
+            this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
+
+          } else if ( windowBottom >= trackBounds.innerBottom ) {
+            this.bottom = true;
+            this.el.style.cssText = 'transform: translateY(' + (trackBounds.innerBottom - elBounds.height - trackBounds.innerTop) + 'px)';
+
+          } else {
+            this.top = true;
+            this.el.style.cssText = '';
+          }
 				}
-				
 			}		
 			
 		} else if ( ! this.top ) { // cases where the sidebar is smaller than the window
@@ -230,10 +239,11 @@
 
 				} else if (this.fixed && elBounds.bottom - this.topOffset >= trackBounds.innerBottom) {
 					this.fixed = false;
-					this.el.style.cssText = 'top:' + (trackBounds.innerBottom - elBounds.height - trackBounds.innerTop) + 'px';
+					this.el.style.cssText = 'transform: translateY(' + (trackBounds.innerBottom - elBounds.height - trackBounds.innerTop) + 'px)';
 				} 	
 				
-			} else if (windowPos < this.lastWindowPos) { // scrolling up
+			} else if (windowPos < this.lastWindowPos) { 
+        // scrolling up
 				
 				if (this.fixed && (windowPos + this.topOffset) <= trackBounds.innerTop) {
 					this.fixed = false;
@@ -244,22 +254,25 @@
 					this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
 				}
 				
-			} else { // no scroll, but probably a resize
-				this.fixed = false;
-				if (windowPos + elBounds.height + this.topOffset < trackBounds.innerBottom && windowPos > trackBounds.innerTop) {
-					this.fixed = true;
-					this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
-				
-				} else if (windowBottom >= trackBounds.innerBottom) {
-					this.el.style.cssText = 'top:' + (trackBounds.innerBottom - elBounds.height - trackBounds.innerTop) + 'px';
-				
-				} else {
-					this.el.style.cssText = '';
-				}
-			}
+			} else { // no vertical scroll; probably a resize
+				if (this.resized) {
+          this.fixed = false;
+          if (windowPos + elBounds.height + this.topOffset < trackBounds.innerBottom && windowPos > trackBounds.innerTop) {
+            this.fixed = true;
+            this.el.style.cssText = 'position:fixed; top:' + this.topOffset + 'px; width:' + this.elWidth + 'px';
+
+          } else if (windowBottom >= trackBounds.innerBottom) {
+            this.el.style.cssText = 'transform: translateY(' + (trackBounds.innerBottom - elBounds.height - trackBounds.innerTop) + 'px)';
+
+          } else {
+            this.el.style.cssText = '';
+          }
+        }
+      }  
 		}
 		
 		this.lastWindowPos = windowPos;
+    this.resized = false; // reset flag.
 	}
 	
 	
